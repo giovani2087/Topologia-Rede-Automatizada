@@ -1,0 +1,6 @@
+Flask==3.0.0
+pysnmp>=5.0.0
+pyasn1<0.5.0
+pyasyncore
+
+

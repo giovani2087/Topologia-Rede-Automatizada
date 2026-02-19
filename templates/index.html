@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Network Mapper</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</head>
+
+<body>
+    <h1>Network Mapper</h1>
+
+    <div class="controls">
+        <label>Network/IP:</label>
+        <input type="text" id="network-input" placeholder="192.168.1.0/24">
+
+        <label>Community:</label>
+        <input type="text" id="community-input" placeholder="Comunidade SNMP" value="public">
+        <button id="scan-btn">Escanear</button>
+        <button id="stop-btn" style="background-color: #dc3545; margin-left: 5px; display: none;">Parar</button>
+
+        <div class="export-controls" style="margin-left: auto; display: flex; gap: 5px;">
+            <button id="reorganize-btn" style="background-color: #007bff;">Re-organizar</button>
+            <button id="export-png-btn" style="background-color: #6c757d;">Exportar PNG</button>
+            <button id="export-pdf-btn" style="background-color: #6c757d;">Exportar PDF</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <div class="main-container">
+        <!-- Sidebar for Maps -->
+        <div id="sidebar">
+            <h3>Mapas</h3>
+            <ul id="map-list">
+                <!-- Map items will be added here -->
+            </ul>
+            <div style="padding: 10px;">
+                <input type="text" id="new-map-name" placeholder="Nome do Mapa"
+                    style="width: 100%; margin-bottom: 5px;">
+                <button id="create-map-btn" style="width: 100%;">Criar Mapa</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content-wrapper" style="flex-grow: 1; display: flex; flex-direction: column; min-width: 200px;">
+            <div id="network-map"></div>
+        </div>
+
+        <div id="resizer" class="resizer"></div>
+
+        <div id="log-container" style="min-width: 150px;">
+            <h3>Scan Logs <span id="scan-status" class="badge">Idle</span></h3>
+            <div id="log-content"></div>
+        </div>
+    </div>
+
+    <!-- Edit Map Modal -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Editar Mapa</h3>
+                <span id="close-modal" style="cursor: pointer; font-size: 20px;">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-map-id">
+                <label>Nome do Mapa:</label>
+                <input type="text" id="edit-map-name">
+                <label>Rede (Padrão):</label>
+                <input type="text" id="edit-map-network" placeholder="192.168.1.0/24">
+                <label>Comunidade (Padrão):</label>
+                <input type="text" id="edit-map-community" placeholder="public">
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-edit" style="background-color: #6c757d;">Cancelar</button>
+                <button id="save-edit">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

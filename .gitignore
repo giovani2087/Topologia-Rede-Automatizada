@@ -1,0 +1,25 @@
+# Banco de dados e Logs
+network_map.db
+app.log
+
+# Pasta de arquivos removidos (Segurança/Organização)
+EXCLUIR/
+
+# Ambientes virtuais
+.venv/
+env/
+venv/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# IDEs e Sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
