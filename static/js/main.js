@@ -264,126 +264,109 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch(`/api/devices?map_id=${currentMapId}`)
             .then(response => response.json())
             .then(data => {
+                if (!data.nodes || !data.edges) {
+                    console.error("API returned invalid data format:", data);
+                    return;
+                }
+
                 const newNodes = data.nodes.map(device => {
-                    let group = 'router';
+                    try {
+                        let group = 'router';
+                        if (device.device_type && device.device_type !== 'router') {
+                            group = device.device_type;
+                        }
+                        else if (device.sysName && (device.sysName.toLowerCase().includes('switch') || device.sysName.toLowerCase().includes('aruba') || (device.sysDescr && (device.sysDescr.toLowerCase().includes('switch') || device.sysDescr.toLowerCase().includes('aruba'))))) {
+                            group = 'switch';
+                        }
+                        else if (device.device_type) {
+                            group = device.device_type;
+                        }
 
-                    // Priority 1: Use explicit device_type if it's NOT just the default 'router'
-                    if (device.device_type && device.device_type !== 'router') {
-                        group = device.device_type;
+                        return {
+                            id: device.ip,
+                            label: (device.sysName && device.sysName !== 'Unknown' && device.sysName !== device.ip) ? `${device.sysName}\n${device.ip}` : device.ip,
+                            title: `IP: ${device.ip}\nType: ${device.device_type}\nDescr: ${device.sysDescr}`,
+                            group: group
+                        };
+                    } catch (e) {
+                        console.error("Error processing node:", device, e);
+                        return null;
                     }
-                    // Priority 2: Name/Description heuristics (overrides default 'router' type)
-                    else if (device.sysName && (device.sysName.toLowerCase().includes('switch') || device.sysName.toLowerCase().includes('aruba') || (device.sysDescr && (device.sysDescr.toLowerCase().includes('switch') || device.sysDescr.toLowerCase().includes('aruba'))))) {
-                        group = 'switch';
-                    }
-                    // Priority 3: Fallback to whatever device_type is (which is likely 'router')
-                    else if (device.device_type) {
-                        group = device.device_type;
-                    }
-
-                    // Debug log
-                    // console.log(`Node ${device.ip}: Type=${device.device_type} Group=${group}`);
-
-                    return {
-                        id: device.ip,
-                        label: (device.sysName && device.sysName !== 'Unknown' && device.sysName !== device.ip) ? `${device.sysName}\n${device.ip}` : device.ip,
-                        title: `IP: ${device.ip}\nType: ${device.device_type}\nDescr: ${device.sysDescr}`,
-                        group: group
-                    };
-                });
+                }).filter(n => n !== null);
 
                 const newEdges = data.edges.map(link => {
-                    let label = "";
-                    if (link.source_port && link.target_port) {
-                        // PortX (U:10, T:20,30) (ROOT) <-> PortY (U:100)
-                        let srcLabel = link.source_port;
-                        if (link.source_vlan) srcLabel += ` (${link.source_vlan})`;
-                        if (link.source_is_root) srcLabel += " (ROOT)";
-
-                        let tgtLabel = link.target_port;
-                        if (link.target_vlan) tgtLabel += ` (${link.target_vlan})`;
-                        if (link.target_is_root) tgtLabel += " (ROOT)";
-
-                        // Also octets to help identity
-                        let srcIpLastOctet = link.source_ip.split('.').pop();
-                        let tgtIpLastOctet = link.target_ip.split('.').pop();
-
-                        label = `${srcLabel} (.${srcIpLastOctet}) <-> ${tgtLabel} (.${tgtIpLastOctet})`;
-                    } else if (link.source_port) {
-                        label = link.source_port;
-                        if (link.source_vlan) label += ` (${link.source_vlan})`;
-                        if (link.source_is_root) label += " (ROOT)";
-                        label += " ->";
-                    }
-
-                    if (link.speed) {
-                        label += `\n(${link.speed})`;
-                    }
-
-                    let color = { color: '#848484' }; // Default grey
-                    if (link.status === 'Up') {
-                        // Standard Green
-                        color = { color: '#28a745', highlight: '#34ce57' };
-
-                        // Check for speed bottlenecks
-                        if (link.speed) {
-                            const speed = link.speed.toLowerCase();
-                            if (speed.includes('100 mbps')) {
-                                color = { color: '#fbc02d', highlight: '#fff176' }; // Yellow/Gold
-                            } else if (speed.includes('10 mbps')) {
-                                color = { color: '#d32f2f', highlight: '#ef5350' }; // Red
-                            }
+                    try {
+                        let label = "";
+                        if (link.source_port && link.target_port) {
+                            let srcLabel = link.source_port;
+                            if (link.source_vlan) srcLabel += ` (${link.source_vlan})`;
+                            if (link.source_is_root) srcLabel += " (ROOT)";
+                            let tgtLabel = link.target_port;
+                            if (link.target_vlan) tgtLabel += ` (${link.target_vlan})`;
+                            if (link.target_is_root) tgtLabel += " (ROOT)";
+                            let srcIpLastOctet = link.source_ip.split('.').pop();
+                            let tgtIpLastOctet = link.target_ip.split('.').pop();
+                            label = `${srcLabel} (.${srcIpLastOctet}) <-> ${tgtLabel} (.${tgtIpLastOctet})`;
+                        } else if (link.source_port) {
+                            label = link.source_port;
+                            if (link.source_vlan) label += ` (${link.source_vlan})`;
+                            if (link.source_is_root) label += " (ROOT)";
+                            label += " ->";
                         }
-                    } else if (link.status === 'Down') {
-                        color = { color: '#9e9e9e', highlight: '#bdbdbd' }; // Grey for Down
-                    } else if (link.status === 'Dormant') {
-                        color = { color: 'orange' };
+                        if (link.speed) label += `\n(${link.speed})`;
+
+                        let color = { color: '#848484' };
+                        if (link.status === 'Up') {
+                            color = { color: '#28a745', highlight: '#34ce57' };
+                            if (link.speed) {
+                                const speed = link.speed.toLowerCase();
+                                if (speed.includes('100 mbps')) color = { color: '#fbc02d', highlight: '#fff176' };
+                                else if (speed.includes('10 mbps')) color = { color: '#d32f2f', highlight: '#ef5350' };
+                            }
+                        } else if (link.status === 'Down') {
+                            color = { color: '#9e9e9e', highlight: '#bdbdbd' };
+                        } else if (link.status === 'Dormant') {
+                            color = { color: 'orange' };
+                        }
+
+                        return {
+                            id: link.id,
+                            from: link.source_ip,
+                            to: link.target_ip,
+                            label: label,
+                            color: color,
+                            font: { align: 'top', size: 10 }
+                        };
+                    } catch (e) {
+                        console.error("Error processing edge:", link, e);
+                        return null;
                     }
+                }).filter(e => e !== null);
 
-                    return {
-                        id: link.id, // Using DB ID to prevent duplicates!
-                        from: link.source_ip,
-                        to: link.target_ip,
-                        label: label,
-                        color: color,
-                        font: { align: 'top', size: 10 }
-                    };
-                });
-
-                // Update nodes without clearing to preserve manual positions
-                // newNodes contain latest data from DB
                 const currentNodes = nodes.get();
-                let hasNewNodes = false;
+                let hasChanges = false;
+
                 newNodes.forEach(newNode => {
                     const existing = currentNodes.find(n => n.id === newNode.id);
                     if (!existing) {
                         nodes.add(newNode);
-                        hasNewNodes = true;
+                        hasChanges = true;
                     } else {
-                        nodes.update(newNode);
+                        // Minimal update to avoid flicker
+                        if (existing.label !== newNode.label || existing.group !== newNode.group) {
+                            nodes.update(newNode);
+                        }
                     }
                 });
 
-                // Trigger stabilization if new nodes were added
-                if (hasNewNodes) {
-                    console.log("New nodes detected. Stabilizing...");
+                if (hasChanges) {
+                    console.log("Map updated with new nodes. Re-stabilizing.");
                     network.setOptions({ physics: { enabled: true } });
+                    network.stabilize();
                 }
 
-                // Remove nodes that are no longer in DB
-                const newIds = newNodes.map(n => n.id);
-                const toRemove = nodes.getIds().filter(id => !newIds.includes(id));
-                nodes.remove(toRemove);
-
-                // For edges, we can clear and re-add since they depend on nodes
                 edges.clear();
                 edges.add(newEdges);
-
-                // If many new nodes were added, stabilization might be needed
-                // But we'll leave that to the Manual Re-organize button or automated scan start
-
-                // Same for edges? Complex with generated IDs. 
-                // Since we regenerate edges every time map logic runs, we might just clear if too mismatched.
-                // For now, simple update appends/modifies. 
             })
             .catch(err => console.error("Error fetching map data:", err));
     }

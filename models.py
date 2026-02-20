@@ -17,7 +17,7 @@ def init_db():
         )
     ''')
 
-    # Devices table (added map_id)
+    # Devices table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS devices (
             ip TEXT,
@@ -26,6 +26,7 @@ def init_db():
             sysDescr TEXT,
             sysObjectID TEXT,
             last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            device_type TEXT DEFAULT 'router',
             PRIMARY KEY (ip, map_id),
             FOREIGN KEY(map_id) REFERENCES maps(id)
         )
@@ -52,7 +53,11 @@ def init_db():
         )
     ''')
     
-    # Migrations for existing tables if needed
+    cursor.execute("PRAGMA table_info(devices)")
+    columns = [column[1] for column in cursor.fetchall()]
+    if 'device_type' not in columns:
+        cursor.execute("ALTER TABLE devices ADD COLUMN device_type TEXT DEFAULT 'router'")
+
     cursor.execute("PRAGMA table_info(maps)")
     columns = [column[1] for column in cursor.fetchall()]
     if 'network' not in columns:
