@@ -33,20 +33,30 @@ Este projeto é uma aplicação web baseada em Flask para descoberta e visualiza
 
 ---
 
-## 🐧 Configuração (Linux)
+## 🐧 Configuração (Linux - Ubuntu/Debian)
 
-1. **Navegue até o diretório**:
+Em versões recentes (como Ubuntu 24.04), o Python protege o sistema contra instalações globais via `pip`. Você **deve** usar um ambiente virtual (`venv`).
+
+1. **Instale os pré-requisitos do sistema**:
    ```bash
-   cd /caminho/para/MAPA-REDE
+   sudo apt update
+   sudo apt install -y python3-pip python3-venv
    ```
 
-2. **Crie e ative o ambiente virtual**:
+2. **Navegue até o diretório e crie o ambiente virtual**:
    ```bash
+   # Navegue para onde o projeto foi baixado
+   cd /caminho/para/Topologia-Rede-Automatizada
    python3 -m venv .venv
+   ```
+
+3. **Ative o ambiente virtual (IMPORTANTE)**:
+   ```bash
    source .venv/bin/activate
    ```
+   *Após a ativação, o nome `(.venv)` aparecerá no início da sua linha de comando.*
 
-3. **Instele as dependências**:
+4. **Instale as dependências dentro da venv**:
    ```bash
    pip install -r requirements.txt
    ```
@@ -55,9 +65,9 @@ Este projeto é uma aplicação web baseada em Flask para descoberta e visualiza
 
 ## 🏃 Como Rodar
 
-1. **Inicie a aplicação**:
+1. **Certifique-se de que a venv está ativa** e inicie a aplicação:
    ```bash
-   python app.py
+   python3 app.py
    ```
 
 2. **Acesse no navegador**:
